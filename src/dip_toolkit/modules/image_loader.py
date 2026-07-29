@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 from pathlib import Path
 from urllib.error import HTTPError, URLError
+from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
 import cv2 as cv
@@ -53,6 +54,11 @@ class ImageLoader:
         ``skip_invalid=True`` quando o comportamento desejado for ignorar
         arquivos inválidos.
         """
+        if isinstance(filenames, (str, Path)):
+            raise TypeError(
+                "filenames deve ser uma sequência de caminhos, não um caminho único."
+            )
+
         images: list[np.ndarray] = []
         for filename in filenames:
             try:
@@ -95,9 +101,24 @@ class ImageLoader:
         *,
         timeout_seconds: float = 30.0,
     ) -> np.ndarray:
-        """Carrega uma imagem a partir de uma URL direta para o arquivo."""
-        if not url.startswith(("http://", "https://")):
-            raise ValueError("A URL deve começar com http:// ou https://")
+        """Carrega uma imagem a partir de uma URL direta para o arquivo.
+
+        Args:
+            url: URL HTTP(S) que aponta diretamente para uma imagem.
+            flags: Modo de leitura aceito por ``cv.imread``.
+            timeout_seconds: Tempo máximo de espera pela resposta, em segundos.
+
+        Raises:
+            ValueError: Se a URL ou o timeout forem inválidos, ou se a resposta
+                não contiver uma imagem decodificável.
+            RuntimeError: Se não for possível baixar a imagem.
+        """
+        parsed_url = urlparse(url)
+        if parsed_url.scheme not in {"http", "https"} or not parsed_url.netloc:
+            raise ValueError("A URL deve ser HTTP(S) e incluir um endereço válido.")
+
+        if isinstance(timeout_seconds, bool) or timeout_seconds <= 0:
+            raise ValueError("timeout_seconds deve ser maior que zero.")
 
         request = Request(url, headers={"User-Agent": "dip-toolkit/0.1"})
 
