@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import cv2 as cv
 import numpy as np
 import pandas as pd
@@ -9,42 +11,69 @@ class StatisticalTools:
     def __init__(self):
         pass
 
-    def get_image_info(self, image):
-        """
-        Extracts metadata and statistical information from an image.
+    def get_image_info(self, image: np.ndarray) -> dict[str, object]:
+        """Retorna propriedades estruturadas de uma imagem NumPy.
 
-        Parameters:
-        - image (numpy.ndarray): Input image.
+        Aceita imagens grayscale 2D e imagens coloridas 3D com três canais. Para
+        dtypes inteiros, ``expected_range`` é o intervalo completo do dtype; para
+        floats, a convenção didática adotada é ``[0.0, 1.0]``.
+
+        Args:
+            image: Array NumPy 2D ou 3D, não vazio, com dtype inteiro ou float.
 
         Returns:
-        - dict: Dictionary containing image metadata and statistics.
+            Dicionário com dimensões, canais, shape, dtype, bytes, extremos,
+            faixa esperada e estatísticas resumidas.
         """
-        if not isinstance(image, np.ndarray):
-            raise ValueError("Input must be a NumPy array representing an image.")
 
-        # Extract image properties
+        self._validate_image(image)
         height, width = image.shape[:2]
-        depth = 1 if len(image.shape) == 2 else image.shape[2]  # Number of channels
-        dtype = image.dtype
-
-        # Compute statistical properties
-        min_val = np.min(image)
-        max_val = np.max(image)
-        mean_val = np.mean(image)
-        std_val = np.std(image)
-        nbytes = image.nbytes
+        channels = 1 if image.ndim == 2 else image.shape[2]
+        minimum = image.min().item()
+        maximum = image.max().item()
+        expected_range = self._expected_range(image.dtype)
 
         return {
             "width": width,
             "height": height,
-            "dtype": dtype,
-            "depth": depth,
-            "nbytes": nbytes,
-            "min_value": min_val,
-            "max_value": max_val,
-            "mean": mean_val,
-            "std_dev": std_val,
+            "ndim": image.ndim,
+            "channels": channels,
+            "shape": image.shape,
+            "dtype": image.dtype,
+            "nbytes": image.nbytes,
+            "minimum": minimum,
+            "maximum": maximum,
+            "expected_range": expected_range,
+            # Chaves legadas preservadas para os exemplos já existentes.
+            "depth": channels,
+            "min_value": minimum,
+            "max_value": maximum,
+            "mean": float(np.mean(image)),
+            "std_dev": float(np.std(image)),
         }
+
+    @staticmethod
+    def _validate_image(image: np.ndarray) -> None:
+        if not isinstance(image, np.ndarray):
+            raise TypeError("image deve ser um array NumPy.")
+        if image.ndim not in {2, 3}:
+            raise ValueError("image deve ter duas ou três dimensões.")
+        if any(dimension <= 0 for dimension in image.shape):
+            raise ValueError("image não pode possuir dimensões vazias.")
+        if image.ndim == 3 and image.shape[2] != 3:
+            raise ValueError("Imagens coloridas devem possuir exatamente três canais.")
+        if not (
+            np.issubdtype(image.dtype, np.integer)
+            or np.issubdtype(image.dtype, np.floating)
+        ):
+            raise TypeError("image deve usar um dtype NumPy inteiro ou float.")
+
+    @staticmethod
+    def _expected_range(dtype: np.dtype) -> tuple[int | float, int | float]:
+        if np.issubdtype(dtype, np.integer):
+            limits = np.iinfo(dtype)
+            return int(limits.min), int(limits.max)
+        return 0.0, 1.0
 
     def print_image_info(self, image):
         """

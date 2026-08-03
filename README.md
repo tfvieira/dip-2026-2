@@ -88,9 +88,7 @@ from dip_toolkit import download_course_image
 Baixe uma imagem pelo nome:
 
 ```python
-image_path = download_course_image(
-    "cameraman_original.png"
-)
+image_path = download_course_image("cameraman_original.png")
 
 print(image_path)
 ```
@@ -129,9 +127,7 @@ plt.show()
 As imagens já baixadas são reutilizadas automaticamente.
 
 ```python
-image_path = download_course_image(
-    "cameraman_original.png"
-)
+image_path = download_course_image("cameraman_original.png")
 ```
 
 Para forçar um novo download:
@@ -191,9 +187,7 @@ python -m pip install -e ".[dev]"
 from dip_toolkit import download_course_image
 from dip_toolkit.modules.image_loader import ImageLoader
 
-image_path = download_course_image(
-    "cameraman_original.png"
-)
+image_path = download_course_image("cameraman_original.png")
 
 image = ImageLoader().load_image(image_path)
 
