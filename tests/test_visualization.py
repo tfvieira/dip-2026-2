@@ -107,3 +107,26 @@ def test_show_image_rejects_values_outside_explicit_range() -> None:
             channel_order="gray",
             value_range=(-1.0, 1.0),
         )
+
+
+def test_show_image_preserves_constant_float_color_in_unit_range() -> None:
+    image = np.ones((2, 3, 3), dtype=np.float32)
+
+    _, axis = Visualization().show_image(
+        image,
+        channel_order="rgb",
+    )
+
+    assert np.array_equal(axis.images[0].get_array(), image)
+
+
+def test_show_image_requires_range_for_constant_float_color_outside_unit_range() -> (
+    None
+):
+    image = np.full((2, 3, 3), -1.0, dtype=np.float32)
+
+    with pytest.raises(ValueError, match="informar value_range"):
+        Visualization().show_image(
+            image,
+            channel_order="rgb",
+        )

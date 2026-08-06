@@ -202,8 +202,16 @@ class Visualization:
         if value_range is None:
             lower = float(np.min(rendered))
             upper = float(np.max(rendered))
+
+            if 0.0 <= lower and upper <= 1.0:
+                return rendered
+
             if lower == upper:
-                return np.zeros_like(rendered)
+                raise ValueError(
+                    "Imagens coloridas float constantes fora de [0, 1] "
+                    "devem informar value_range."
+                )
         else:
             lower, upper = value_range
+
         return (rendered - lower) / (upper - lower)
