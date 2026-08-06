@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from numbers import Real
+
 import cv2 as cv
 import numpy as np
 import pandas as pd
@@ -9,42 +13,97 @@ class StatisticalTools:
     def __init__(self):
         pass
 
-    def get_image_info(self, image):
-        """
-        Extracts metadata and statistical information from an image.
+    def get_image_info(
+        self,
+        image: np.ndarray,
+        *,
+        expected_range: tuple[Real, Real] | None = None,
+    ) -> dict[str, object]:
+        """Retorna propriedades estruturadas de uma imagem NumPy.
 
-        Parameters:
-        - image (numpy.ndarray): Input image.
+        Aceita imagens grayscale 2D e imagens coloridas 3D com três canais. Para
+        dtypes inteiros, ``expected_range`` é o intervalo completo do dtype. Para
+        floats, o padrão é o intervalo representável pelo dtype, sem supor que a
+        imagem esteja em ``[0.0, 1.0]``. Use ``expected_range`` para declarar uma
+        faixa didática específica, como ``(-1.0, 1.0)``.
+
+        Args:
+            image: Array NumPy 2D ou 3D, não vazio, com dtype inteiro ou float.
+            expected_range: Faixa opcional ``(mínimo, máximo)`` esperada para os
+                valores da imagem.
 
         Returns:
-        - dict: Dictionary containing image metadata and statistics.
+            Dicionário com dimensões, canais, shape, dtype, bytes, extremos,
+            faixa esperada e estatísticas resumidas.
         """
-        if not isinstance(image, np.ndarray):
-            raise ValueError("Input must be a NumPy array representing an image.")
 
-        # Extract image properties
+        self._validate_image(image)
         height, width = image.shape[:2]
-        depth = 1 if len(image.shape) == 2 else image.shape[2]  # Number of channels
-        dtype = image.dtype
-
-        # Compute statistical properties
-        min_val = np.min(image)
-        max_val = np.max(image)
-        mean_val = np.mean(image)
-        std_val = np.std(image)
-        nbytes = image.nbytes
+        channels = 1 if image.ndim == 2 else image.shape[2]
+        minimum = image.min().item()
+        maximum = image.max().item()
+        resolved_range = self._resolve_expected_range(image.dtype, expected_range)
 
         return {
             "width": width,
             "height": height,
-            "dtype": dtype,
-            "depth": depth,
-            "nbytes": nbytes,
-            "min_value": min_val,
-            "max_value": max_val,
-            "mean": mean_val,
-            "std_dev": std_val,
+            "ndim": image.ndim,
+            "channels": channels,
+            "shape": image.shape,
+            "dtype": image.dtype,
+            "nbytes": image.nbytes,
+            "minimum": minimum,
+            "maximum": maximum,
+            "expected_range": resolved_range,
+            # Chaves legadas preservadas para os exemplos já existentes.
+            "depth": channels,
+            "min_value": minimum,
+            "max_value": maximum,
+            "mean": float(np.mean(image)),
+            "std_dev": float(np.std(image)),
         }
+
+    @staticmethod
+    def _validate_image(image: np.ndarray) -> None:
+        if not isinstance(image, np.ndarray):
+            raise TypeError("image deve ser um array NumPy.")
+        if image.ndim not in {2, 3}:
+            raise ValueError("image deve ter duas ou três dimensões.")
+        if any(dimension <= 0 for dimension in image.shape):
+            raise ValueError("image não pode possuir dimensões vazias.")
+        if image.ndim == 3 and image.shape[2] != 3:
+            raise ValueError("Imagens coloridas devem possuir exatamente três canais.")
+        if not (
+            np.issubdtype(image.dtype, np.integer)
+            or np.issubdtype(image.dtype, np.floating)
+        ):
+            raise TypeError("image deve usar um dtype NumPy inteiro ou float.")
+
+    @staticmethod
+    def _resolve_expected_range(
+        dtype: np.dtype,
+        expected_range: tuple[Real, Real] | None,
+    ) -> tuple[int | float, int | float]:
+        if expected_range is not None:
+            if not isinstance(expected_range, tuple) or len(expected_range) != 2:
+                raise TypeError("expected_range deve ser uma tupla (mínimo, máximo).")
+            lower, upper = expected_range
+            if any(
+                isinstance(value, (bool, np.bool_)) or not isinstance(value, Real)
+                for value in expected_range
+            ):
+                raise TypeError("Os limites de expected_range devem ser números reais.")
+            lower_float, upper_float = float(lower), float(upper)
+            if not np.isfinite(lower_float) or not np.isfinite(upper_float):
+                raise ValueError("Os limites de expected_range devem ser finitos.")
+            if lower_float >= upper_float:
+                raise ValueError("expected_range deve possuir mínimo menor que máximo.")
+            return lower_float, upper_float
+        if np.issubdtype(dtype, np.integer):
+            limits = np.iinfo(dtype)
+            return int(limits.min), int(limits.max)
+        limits = np.finfo(dtype)
+        return float(limits.min), float(limits.max)
 
     def print_image_info(self, image):
         """

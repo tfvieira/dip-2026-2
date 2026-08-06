@@ -7,7 +7,7 @@ from pathlib import Path
 
 import cv2 as cv
 
-from dip_toolkit.assets import find_image
+from dip_toolkit import download_course_image
 from dip_toolkit.modules.image_loader import ImageLoader
 
 
@@ -29,7 +29,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    image_path = find_image(args.filename, args.images_dir)
+    image_path = download_course_image(args.filename, output_dir=args.images_dir)
     image = ImageLoader().load_image(image_path)
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
