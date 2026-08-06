@@ -33,7 +33,16 @@ def test_get_image_info_describes_color_image() -> None:
     assert info["dtype"] == np.dtype(np.float32)
     assert info["minimum"] == 0.0
     assert info["maximum"] == 1.0
-    assert info["expected_range"] == (0.0, 1.0)
+    limits = np.finfo(np.float32)
+    assert info["expected_range"] == (float(limits.min), float(limits.max))
+
+
+def test_get_image_info_accepts_explicit_float_range() -> None:
+    image = np.array([[-1.0, 0.5, 1.0]], dtype=np.float64)
+
+    info = StatisticalTools().get_image_info(image, expected_range=(-1.0, 1.0))
+
+    assert info["expected_range"] == (-1.0, 1.0)
 
 
 @pytest.mark.parametrize(
@@ -52,3 +61,22 @@ def test_get_image_info_rejects_invalid_images(
 ) -> None:
     with pytest.raises(exception):
         StatisticalTools().get_image_info(image)  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize(
+    ("expected_range", "exception"),
+    [
+        ([0.0, 1.0], TypeError),
+        ((1.0, 0.0), ValueError),
+        ((float("nan"), 1.0), ValueError),
+    ],
+)
+def test_get_image_info_rejects_invalid_expected_range(
+    expected_range: object,
+    exception: type[Exception],
+) -> None:
+    with pytest.raises(exception):
+        StatisticalTools().get_image_info(
+            np.ones((2, 2), dtype=np.float32),
+            expected_range=expected_range,  # type: ignore[arg-type]
+        )

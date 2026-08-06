@@ -217,7 +217,9 @@ Exemplo:
 from dip_toolkit import download_course_image
 from dip_toolkit.modules.image_loader import ImageLoader
 
-image_path = download_course_image("cameraman_original.png")
+image_path = download_course_image(
+    "cameraman_original.png"
+)
 
 image = ImageLoader().load_image(image_path)
 ```

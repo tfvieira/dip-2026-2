@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from numbers import Real
 from typing import Literal
 
 import cv2 as cv
@@ -31,19 +32,24 @@ class Visualization:
         channel_order: ChannelOrder = "gray",
         title: str | None = None,
         ax: Axes | None = None,
+        value_range: tuple[Real, Real] | None = None,
     ) -> tuple[Figure, Axes]:
         """Exibe uma imagem e retorna a figura e os eixos para composição.
 
         Imagens 2D devem usar ``channel_order="gray"``. Imagens coloridas 3D
         devem informar explicitamente ``"bgr"`` ou ``"rgb"``; BGR é convertido
-        para RGB antes de ser mostrado pelo Matplotlib. A função não chama
-        ``plt.show()``, permitindo compor e testar a figura retornada.
+        para RGB antes de ser mostrado pelo Matplotlib. Para imagens float, uma
+        faixa explícita permite visualizar valores em ``[-1, 1]`` sem supor
+        ``[0, 1]``. A função não chama ``plt.show()``, permitindo compor e testar
+        a figura retornada.
 
         Args:
             image: Imagem 2D em escala de cinza ou 3D com três canais.
             channel_order: Ordem dos canais da imagem.
             title: Título opcional para o eixo.
             ax: Eixo existente para composição. Quando omitido, cria um novo.
+            value_range: Faixa opcional ``(mínimo, máximo)`` para exibição de
+                imagens float. Valores fora dela são rejeitados.
 
         Returns:
             A figura e o eixo que contêm a imagem.
@@ -51,19 +57,28 @@ class Visualization:
 
         self._validate_image(image)
         self._validate_channel_order(image, channel_order)
+        resolved_range = self._resolve_value_range(image, value_range)
 
         if ax is None:
             figure, ax = plt.subplots()
         else:
             figure = ax.figure
 
-        rendered = (
-            cv.cvtColor(image, cv.COLOR_BGR2RGB) if channel_order == "bgr" else image
+        rendered = self._render_for_matplotlib(
+            image,
+            channel_order,
+            resolved_range,
         )
         if image.ndim == 2:
-            ax.imshow(
-                rendered, cmap="gray", vmin=self._vmin(image), vmax=self._vmax(image)
-            )
+            if resolved_range is None:
+                ax.imshow(rendered, cmap="gray")
+            else:
+                ax.imshow(
+                    rendered,
+                    cmap="gray",
+                    vmin=resolved_range[0],
+                    vmax=resolved_range[1],
+                )
         else:
             ax.imshow(rendered)
         if title is not None:
@@ -77,6 +92,7 @@ class Visualization:
         titles: Sequence[str],
         *,
         channel_order: ChannelOrder = "gray",
+        value_range: tuple[Real, Real] | None = None,
     ) -> tuple[Figure, np.ndarray]:
         """Exibe imagens lado a lado e retorna figura e eixos.
 
@@ -88,6 +104,8 @@ class Visualization:
             images: Sequência não vazia de imagens 2D ou 3D com três canais.
             titles: Um título para cada imagem.
             channel_order: Ordem dos canais compartilhada pelas imagens.
+            value_range: Faixa opcional compartilhada para exibição de imagens
+                float.
 
         Returns:
             Figura Matplotlib e array unidimensional de eixos.
@@ -114,6 +132,7 @@ class Visualization:
                 channel_order=channel_order,
                 title=title,
                 ax=axis,
+                value_range=value_range,
             )
         figure.tight_layout()
         return figure, flattened_axes
@@ -146,9 +165,45 @@ class Visualization:
             )
 
     @staticmethod
-    def _vmin(image: np.ndarray) -> float | None:
-        return 0.0 if np.issubdtype(image.dtype, np.floating) else None
+    def _resolve_value_range(
+        image: np.ndarray,
+        value_range: tuple[Real, Real] | None,
+    ) -> tuple[float, float] | None:
+        if value_range is None:
+            return None
+        if not isinstance(value_range, tuple) or len(value_range) != 2:
+            raise TypeError("value_range deve ser uma tupla (mínimo, máximo).")
+        lower, upper = value_range
+        if any(
+            isinstance(value, (bool, np.bool_)) or not isinstance(value, Real)
+            for value in value_range
+        ):
+            raise TypeError("Os limites de value_range devem ser números reais.")
+        lower_float, upper_float = float(lower), float(upper)
+        if not np.isfinite(lower_float) or not np.isfinite(upper_float):
+            raise ValueError("Os limites de value_range devem ser finitos.")
+        if lower_float >= upper_float:
+            raise ValueError("value_range deve possuir mínimo menor que máximo.")
+        if np.any(image < lower_float) or np.any(image > upper_float):
+            raise ValueError("image contém valores fora de value_range.")
+        return lower_float, upper_float
 
     @staticmethod
-    def _vmax(image: np.ndarray) -> float | None:
-        return 1.0 if np.issubdtype(image.dtype, np.floating) else None
+    def _render_for_matplotlib(
+        image: np.ndarray,
+        channel_order: ChannelOrder,
+        value_range: tuple[float, float] | None,
+    ) -> np.ndarray:
+        rendered = (
+            cv.cvtColor(image, cv.COLOR_BGR2RGB) if channel_order == "bgr" else image
+        )
+        if image.ndim != 3 or not np.issubdtype(image.dtype, np.floating):
+            return rendered
+        if value_range is None:
+            lower = float(np.min(rendered))
+            upper = float(np.max(rendered))
+            if lower == upper:
+                return np.zeros_like(rendered)
+        else:
+            lower, upper = value_range
+        return (rendered - lower) / (upper - lower)

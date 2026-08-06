@@ -117,6 +117,8 @@ class ImageTransformer:
         validated_levels = self._validate_levels(levels)
         lower, upper = self._validate_value_range(value_range, image.dtype)
 
+        if np.issubdtype(image.dtype, np.floating) and not np.all(np.isfinite(image)):
+            raise ValueError("image deve conter somente valores finitos.")
         if np.any(image < lower) or np.any(image > upper):
             raise ValueError("image contém valores fora de value_range.")
 

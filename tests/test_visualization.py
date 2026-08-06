@@ -30,6 +30,31 @@ def test_show_image_converts_bgr_for_matplotlib() -> None:
     assert np.array_equal(axis.images[0].get_array(), np.array([[[255, 0, 0]]]))
 
 
+def test_show_image_uses_explicit_float_range_without_clipping() -> None:
+    image = np.array([[-1.0, 0.0, 1.0]], dtype=np.float32)
+
+    _, axis = Visualization().show_image(
+        image,
+        channel_order="gray",
+        value_range=(-1.0, 1.0),
+    )
+
+    assert axis.images[0].get_clim() == (-1.0, 1.0)
+    assert np.array_equal(axis.images[0].get_array(), image)
+
+
+def test_show_image_normalizes_float_color_with_explicit_range() -> None:
+    image = np.array([[[-1.0, 0.0, 1.0]]], dtype=np.float32)
+
+    _, axis = Visualization().show_image(
+        image,
+        channel_order="bgr",
+        value_range=(-1.0, 1.0),
+    )
+
+    assert np.allclose(axis.images[0].get_array(), np.array([[[1.0, 0.5, 0.0]]]))
+
+
 def test_compare_images_returns_one_axis_per_image() -> None:
     first = np.zeros((2, 3), dtype=np.uint8)
     second = np.ones((2, 3), dtype=np.uint8)
@@ -71,3 +96,14 @@ def test_compare_images_rejects_mismatched_titles() -> None:
 
     with pytest.raises(ValueError, match="mesmo tamanho"):
         Visualization().compare_images([image], ["Um", "Dois"])
+
+
+def test_show_image_rejects_values_outside_explicit_range() -> None:
+    image = np.array([[-1.0, 1.5]], dtype=np.float32)
+
+    with pytest.raises(ValueError, match="fora de value_range"):
+        Visualization().show_image(
+            image,
+            channel_order="gray",
+            value_range=(-1.0, 1.0),
+        )

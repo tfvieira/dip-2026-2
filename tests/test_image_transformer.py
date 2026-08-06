@@ -131,3 +131,15 @@ def test_quantize_uniform_rejects_values_outside_range() -> None:
             levels=4,
             value_range=(0, 100),
         )
+
+
+@pytest.mark.parametrize("invalid_value", [np.nan, np.inf, -np.inf])
+def test_quantize_uniform_rejects_non_finite_values(invalid_value: float) -> None:
+    image = np.array([[0.0, invalid_value]], dtype=np.float32)
+
+    with pytest.raises(ValueError, match="valores finitos"):
+        ImageTransformer().quantize_uniform(
+            image,
+            levels=4,
+            value_range=(-1.0, 1.0),
+        )
