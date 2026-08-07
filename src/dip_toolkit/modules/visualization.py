@@ -16,14 +16,57 @@ ChannelOrder = Literal["gray", "bgr", "rgb"]
 class Visualization:
     """Cria visualizações didáticas de arrays de imagem com Matplotlib."""
 
-    def __init__(self):
-        pass
+    def plot_histogram(
+        self,
+        counts: np.ndarray,
+        bin_edges: np.ndarray | Sequence[Real] | None = None,
+        *,
+        ax: Axes | None = None,
+        title: str | None = "Image Histogram",
+        label: str | None = None,
+        color: str | None = None,
+    ) -> tuple[Figure, Axes]:
+        """Plota contagens de histograma sem chamar plt.show().
 
-    def plot_histogram(self, hist):
-        plt.figure()
-        plt.plot(hist)
-        plt.title("Image Histogram")
-        plt.show()
+        Para compatibilidade com a API anterior, counts também pode ter shape
+        (N, 1). Quando bin_edges é informado, a linha usa o centro de cada bin
+        como coordenada horizontal. O eixo opcional permite compor vários
+        histogramas na mesma figura.
+
+        Args:
+            counts: Contagens não negativas em um array 1D ou (N, 1).
+            bin_edges: Bordas 1D, finitas e estritamente crescentes, de tamanho
+                N + 1. Quando omitidas, usa os índices das contagens.
+            ax: Eixo Matplotlib existente. Quando omitido, cria um novo.
+            title: Título opcional do eixo.
+            label: Rótulo opcional para a linha e a legenda.
+            color: Cor opcional aceita pelo Matplotlib.
+
+        Returns:
+            Figura e eixo que contêm a linha do histograma.
+        """
+
+        validated_counts = self._validate_histogram_counts(counts)
+        x_values = self._resolve_histogram_x(validated_counts, bin_edges)
+        if ax is not None and not isinstance(ax, Axes):
+            raise TypeError("ax deve ser um eixo Matplotlib.")
+        if title is not None and not isinstance(title, str):
+            raise TypeError("title deve ser uma string ou None.")
+        if label is not None and not isinstance(label, str):
+            raise TypeError("label deve ser uma string ou None.")
+
+        if ax is None:
+            figure, axis = plt.subplots()
+        else:
+            figure, axis = ax.figure, ax
+        axis.plot(x_values, validated_counts, label=label, color=color)
+        if title is not None:
+            axis.set_title(title)
+        axis.set_xlabel("Intensidade")
+        axis.set_ylabel("Frequência")
+        if label is not None:
+            axis.legend()
+        return figure, axis
 
     def show_image(
         self,
@@ -36,20 +79,16 @@ class Visualization:
     ) -> tuple[Figure, Axes]:
         """Exibe uma imagem e retorna a figura e os eixos para composição.
 
-        Imagens 2D devem usar ``channel_order="gray"``. Imagens coloridas 3D
-        devem informar explicitamente ``"bgr"`` ou ``"rgb"``; BGR é convertido
-        para RGB antes de ser mostrado pelo Matplotlib. Para imagens float, uma
-        faixa explícita permite visualizar valores em ``[-1, 1]`` sem supor
-        ``[0, 1]``. A função não chama ``plt.show()``, permitindo compor e testar
-        a figura retornada.
+        Imagens 2D devem usar channel_order="gray". Imagens coloridas 3D devem
+        informar "bgr" ou "rgb"; BGR é convertido para RGB antes da exibição.
+        A função não chama plt.show().
 
         Args:
             image: Imagem 2D em escala de cinza ou 3D com três canais.
             channel_order: Ordem dos canais da imagem.
             title: Título opcional para o eixo.
             ax: Eixo existente para composição. Quando omitido, cria um novo.
-            value_range: Faixa opcional ``(mínimo, máximo)`` para exibição de
-                imagens float. Valores fora dela são rejeitados.
+            value_range: Faixa opcional (mínimo, máximo) para imagens float.
 
         Returns:
             A figura e o eixo que contêm a imagem.
@@ -96,16 +135,11 @@ class Visualization:
     ) -> tuple[Figure, np.ndarray]:
         """Exibe imagens lado a lado e retorna figura e eixos.
 
-        Todas as imagens devem possuir a mesma dimensionalidade e ordem de canais
-        indicada por ``channel_order``. Para uma imagem colorida carregada pelo
-        OpenCV, informe ``channel_order="bgr"``.
-
         Args:
             images: Sequência não vazia de imagens 2D ou 3D com três canais.
             titles: Um título para cada imagem.
             channel_order: Ordem dos canais compartilhada pelas imagens.
-            value_range: Faixa opcional compartilhada para exibição de imagens
-                float.
+            value_range: Faixa opcional compartilhada para imagens float.
 
         Returns:
             Figura Matplotlib e array unidimensional de eixos.
@@ -136,6 +170,54 @@ class Visualization:
             )
         figure.tight_layout()
         return figure, flattened_axes
+
+    @staticmethod
+    def _validate_histogram_counts(counts: np.ndarray) -> np.ndarray:
+        if not isinstance(counts, np.ndarray):
+            raise TypeError("counts deve ser um array NumPy.")
+        if counts.ndim == 2 and counts.shape[1:] == (1,):
+            counts = counts[:, 0]
+        if counts.ndim != 1:
+            raise ValueError("counts deve ser unidimensional ou possuir shape (N, 1).")
+        if counts.size == 0:
+            raise ValueError("counts não pode estar vazio.")
+        if np.issubdtype(counts.dtype, np.bool_) or not (
+            np.issubdtype(counts.dtype, np.integer)
+            or np.issubdtype(counts.dtype, np.floating)
+        ):
+            raise TypeError("counts deve usar dtype inteiro ou float.")
+        if not np.all(np.isfinite(counts)):
+            raise ValueError("counts deve conter somente valores finitos.")
+        if np.any(counts < 0):
+            raise ValueError("counts não pode conter valores negativos.")
+        return counts
+
+    @staticmethod
+    def _resolve_histogram_x(
+        counts: np.ndarray,
+        bin_edges: np.ndarray | Sequence[Real] | None,
+    ) -> np.ndarray:
+        if bin_edges is None:
+            return np.arange(counts.size)
+        try:
+            edges = np.asarray(bin_edges)
+        except (TypeError, ValueError) as error:
+            raise TypeError("bin_edges deve ser uma sequência numérica.") from error
+        if edges.ndim != 1:
+            raise ValueError("bin_edges deve ser unidimensional.")
+        if edges.size != counts.size + 1:
+            raise ValueError("bin_edges deve possuir len(counts) + 1 valores.")
+        if np.issubdtype(edges.dtype, np.bool_) or not np.issubdtype(
+            edges.dtype, np.number
+        ):
+            raise TypeError("bin_edges deve conter números.")
+        if np.iscomplexobj(edges):
+            raise TypeError("bin_edges deve conter números reais.")
+        if not np.all(np.isfinite(edges)):
+            raise ValueError("bin_edges deve conter somente valores finitos.")
+        if np.any(np.diff(edges) <= 0):
+            raise ValueError("bin_edges deve ser estritamente crescente.")
+        return (edges[:-1] + edges[1:]) / 2
 
     @staticmethod
     def _validate_image(image: np.ndarray) -> None:
@@ -202,10 +284,8 @@ class Visualization:
         if value_range is None:
             lower = float(np.min(rendered))
             upper = float(np.max(rendered))
-
             if 0.0 <= lower and upper <= 1.0:
                 return rendered
-
             if lower == upper:
                 raise ValueError(
                     "Imagens coloridas float constantes fora de [0, 1] "
@@ -213,5 +293,4 @@ class Visualization:
                 )
         else:
             lower, upper = value_range
-
         return (rendered - lower) / (upper - lower)
