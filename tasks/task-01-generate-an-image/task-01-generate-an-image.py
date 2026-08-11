@@ -1,5 +1,4 @@
 import numpy as np
-import cv2
 
 
 def generate_image(seed, width, height, mean, std):
