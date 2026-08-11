@@ -3,21 +3,23 @@ from __future__ import annotations
 from collections.abc import Sequence
 from numbers import Real
 
-import cv2 as cv
 import numpy as np
 
 ValueRange = tuple[Real, Real]
 ControlPoint = tuple[Real, Real]
+_SUPPORTED_DTYPES = frozenset(
+    np.dtype(dtype) for dtype in (np.uint8, np.uint16, np.int16, np.float32, np.float64)
+)
 
 
 class IntensityTransformer:
     """Aplica transformações ponto a ponto e equalização em imagens.
 
     As transformações ponto a ponto aceitam imagens grayscale 2D ou coloridas
-    3D com três canais e preservam shape e dtype. Para inteiros, a faixa padrão
-    é a faixa completa de numpy.iinfo(dtype). Para floats, valores em [0.0, 1.0]
-    são aceitos automaticamente; outras faixas precisam ser informadas por
-    value_range.
+    3D com três canais nos dtypes uint8, uint16, int16, float32 e float64, e
+    preservam shape e dtype. Para inteiros, a faixa padrão é a faixa completa
+    de numpy.iinfo(dtype). Para floats, valores em [0.0, 1.0] são aceitos
+    automaticamente; outras faixas precisam ser informadas por value_range.
     """
 
     def negative(
@@ -160,7 +162,13 @@ class IntensityTransformer:
             raise TypeError("equalize_grayscale aceita somente imagens uint8.")
         if np.min(image) == np.max(image):
             return image.copy()
-        return cv.equalizeHist(image)
+        histogram = np.bincount(image.ravel(), minlength=256)
+        cdf = histogram.cumsum()
+        cdf_min = cdf[np.flatnonzero(histogram)[0]]
+        adjusted_cdf = np.maximum(cdf - cdf_min, 0)
+        lut = np.rint(adjusted_cdf / (image.size - cdf_min) * 255)
+        lut = np.clip(lut, 0, 255).astype(np.uint8)
+        return lut[image]
 
     def _prepare(
         self,
@@ -183,13 +191,11 @@ class IntensityTransformer:
             raise ValueError("image não pode possuir dimensões vazias.")
         if image.ndim == 3 and image.shape[2] != 3:
             raise ValueError("Imagens coloridas devem possuir exatamente três canais.")
-        if np.issubdtype(image.dtype, np.bool_):
-            raise TypeError("image não aceita dtype booleano.")
-        if not (
-            np.issubdtype(image.dtype, np.integer)
-            or np.issubdtype(image.dtype, np.floating)
-        ):
-            raise TypeError("image deve usar um dtype NumPy inteiro ou float.")
+        if image.dtype not in _SUPPORTED_DTYPES:
+            raise TypeError(
+                f"image usa dtype não suportado: {image.dtype}. "
+                "Dtypes suportados: uint8, uint16, int16, float32 e float64."
+            )
         if np.issubdtype(image.dtype, np.floating) and not np.all(np.isfinite(image)):
             raise ValueError("image deve conter somente valores finitos.")
 

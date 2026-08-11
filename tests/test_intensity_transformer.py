@@ -194,6 +194,34 @@ def test_equalize_grayscale_bimodal_image() -> None:
     assert result.dtype == image.dtype
 
 
+def test_equalize_grayscale_applies_expected_cdf_lut() -> None:
+    image = np.array(
+        [
+            [0, 0, 0, 1],
+            [1, 1, 2, 2],
+            [2, 3, 3, 3],
+            [3, 3, 3, 3],
+        ],
+        dtype=np.uint8,
+    )
+    original = image.copy()
+    expected = np.array(
+        [
+            [0, 0, 0, 59],
+            [59, 59, 118, 118],
+            [118, 255, 255, 255],
+            [255, 255, 255, 255],
+        ],
+        dtype=np.uint8,
+    )
+
+    result = IntensityTransformer().equalize_grayscale(image)
+
+    assert np.array_equal(result, expected)
+    assert np.array_equal(image, original)
+    assert result is not image
+
+
 def test_equalize_grayscale_constant_returns_equivalent_copy() -> None:
     image = np.full((2, 3), 42, dtype=np.uint8)
 
@@ -239,6 +267,29 @@ def test_point_transform_rejects_invalid_images(
 ) -> None:
     with pytest.raises(exception):
         IntensityTransformer().negative(image)
+
+
+@pytest.mark.parametrize("dtype", [np.int64, np.uint64])
+def test_point_transform_rejects_unsupported_64_bit_integer_dtype(
+    dtype: type[np.generic],
+) -> None:
+    image = np.array([[0, 1]], dtype=dtype)
+
+    with pytest.raises(TypeError, match="dtype"):
+        IntensityTransformer().negative(image)
+
+
+@pytest.mark.parametrize(
+    "dtype",
+    [np.uint8, np.uint16, np.int16, np.float32, np.float64],
+)
+def test_point_transform_accepts_supported_dtype(dtype: type[np.generic]) -> None:
+    image = np.array([[0, 1]], dtype=dtype)
+
+    result = IntensityTransformer().negative(image)
+
+    assert result.shape == image.shape
+    assert result.dtype == image.dtype
 
 
 def test_float_outside_unit_range_requires_explicit_range() -> None:
