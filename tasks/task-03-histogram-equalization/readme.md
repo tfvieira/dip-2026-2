@@ -25,6 +25,17 @@ Students are required to complete the `equalize_histogram` function by:
 - building an equalization lookup table;
 - applying the lookup table to the image.
 
+For an input intensity `r`, use the following mapping convention:
+
+```text
+s = round((CDF(r) - cdf_min) / (N - cdf_min) * 255)
+```
+
+In this expression, `CDF(r)` is the cumulative count at intensity `r`,
+`cdf_min` is the first nonzero CDF value, and `N` is the total number of
+pixels in the image. This mapping defines the values used in the equalization
+lookup table.
+
 The function includes markers (`### START CODE HERE ###` and
 `### END CODE HERE ###`). Only the code between these markers should be
 modified.
