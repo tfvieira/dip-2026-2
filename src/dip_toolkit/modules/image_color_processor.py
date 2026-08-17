@@ -216,6 +216,63 @@ class ColorImageProcessor:
         axis.set(xlabel="Red", ylabel="Green", zlabel="Blue", title="RGB color cube")
         return figure, axis
 
+    def plot_rgb_histograms(self, image: np.ndarray) -> None:
+        """Mantém a API legada para histogramas de uma imagem BGR uint8.
+
+        O nome foi preservado por compatibilidade. Como no comportamento
+        original, a entrada é tratada como BGR (a convenção do OpenCV), a
+        figura é exibida com ``plt.show()`` e nenhum valor é retornado.
+        Para composição sem efeitos visuais, use :meth:`channel_histograms` e
+        :meth:`plot_channel_histograms`.
+        """
+        histograms = self.channel_histograms(image, "bgr")
+        self.plot_channel_histograms(histograms, "bgr")
+        plt.show()
+
+    def convert_color_space(self, image: np.ndarray, conversion: str) -> np.ndarray:
+        """Mantém a API legada de conversão partindo de uma imagem BGR.
+
+        As chaves históricas usam o prefixo ``rgb_to_``, mas a implementação
+        original empregava códigos ``BGR`` do OpenCV. Esse comportamento é
+        mantido; para uma convenção explícita, use :meth:`convert`.
+        """
+        destinations: dict[str, ColorSpace] = {
+            "rgb_to_hsv": "hsv",
+            "rgb_to_ycrcb": "ycrcb",
+            "rgb_to_lab": "lab",
+            "rgb_to_gray": "gray",
+        }
+        if conversion not in destinations:
+            supported = list(destinations)
+            raise ValueError(
+                f"Unsupported conversion: {conversion}. Supported: {supported}"
+            )
+        return self.convert(image, "bgr", destinations[conversion])
+
+    def rgb_to_cmyk(self, image: np.ndarray) -> np.ndarray:
+        """Mantém a API legada de conversão de imagem BGR uint8 para CMYK.
+
+        A saída tem shape ``(height, width, 4)``, dtype ``uint8`` e canais
+        CMYK. Embora o nome histórico mencione RGB, a entrada preserva a
+        convenção BGR usada pelo OpenCV na implementação original.
+        """
+        self._validate_color_image(image, "bgr")
+        blue, green, red = (
+            image[..., index].astype(np.float64) / 255.0 for index in range(3)
+        )
+        black = 1.0 - np.maximum.reduce((red, green, blue))
+        denominator = 1.0 - black + 1e-5
+        cyan = (1.0 - red - black) / denominator
+        magenta = (1.0 - green - black) / denominator
+        yellow = (1.0 - blue - black) / denominator
+        cmyk = np.stack((cyan, magenta, yellow, black), axis=-1)
+        return (cmyk * 255.0).astype(np.uint8)
+
+    def plot_rgb_3d_cube(self, image: np.ndarray) -> None:
+        """Mantém a API legada que exibe o cubo de cores de uma imagem BGR."""
+        self.plot_color_cube(image, "bgr")
+        plt.show()
+
     @staticmethod
     def _validate_channel_order(channel_order: ColorOrder) -> ColorOrder:
         if not isinstance(channel_order, str) or channel_order not in _COLOR_ORDERS:

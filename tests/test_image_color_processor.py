@@ -60,6 +60,56 @@ def test_color_space_conversions_have_documented_shapes_and_dtypes() -> None:
     assert gray.dtype == np.uint8
 
 
+def test_color_space_conversions_return_expected_values_for_primary_colors() -> None:
+    bgr = np.array(
+        [[[0, 0, 255], [0, 255, 0], [255, 0, 0], [255, 255, 255], [0, 0, 0]]],
+        dtype=np.uint8,
+    )
+    processor = ColorImageProcessor()
+
+    assert np.array_equal(
+        processor.convert(bgr, "bgr", "hsv"),
+        np.array(
+            [[[0, 255, 255], [60, 255, 255], [120, 255, 255], [0, 0, 255], [0, 0, 0]]],
+            dtype=np.uint8,
+        ),
+    )
+    assert np.array_equal(
+        processor.convert(bgr, "bgr", "ycrcb"),
+        np.array(
+            [
+                [
+                    [76, 255, 85],
+                    [150, 21, 43],
+                    [29, 107, 255],
+                    [255, 128, 128],
+                    [0, 128, 128],
+                ]
+            ],
+            dtype=np.uint8,
+        ),
+    )
+    assert np.array_equal(
+        processor.convert(bgr, "bgr", "lab"),
+        np.array(
+            [
+                [
+                    [136, 208, 195],
+                    [224, 42, 211],
+                    [82, 207, 20],
+                    [255, 128, 128],
+                    [0, 128, 128],
+                ]
+            ],
+            dtype=np.uint8,
+        ),
+    )
+    assert np.array_equal(
+        processor.convert(bgr, "bgr", "gray"),
+        np.array([[76, 150, 29, 255, 0]], dtype=np.uint8),
+    )
+
+
 def test_selected_hsv_round_trip_is_within_uint8_tolerance() -> None:
     bgr = np.array([[[12, 34, 200], [255, 10, 0]]], dtype=np.uint8)
     processor = ColorImageProcessor()
@@ -103,6 +153,25 @@ def test_histogram_plot_is_composable_and_uses_channel_labels() -> None:
 
     assert figure is axis.figure
     assert [line.get_label() for line in axis.lines] == ["R", "G", "B"]
+
+
+def test_legacy_public_apis_remain_available(monkeypatch: pytest.MonkeyPatch) -> None:
+    processor = ColorImageProcessor()
+    bgr_red = np.array([[[0, 0, 255]]], dtype=np.uint8)
+    show_calls: list[None] = []
+    monkeypatch.setattr(plt, "show", lambda: show_calls.append(None))
+
+    assert np.array_equal(
+        processor.convert_color_space(bgr_red, "rgb_to_hsv"),
+        processor.convert(bgr_red, "bgr", "hsv"),
+    )
+    assert np.array_equal(
+        processor.rgb_to_cmyk(bgr_red),
+        np.array([[[0, 254, 254, 0]]], dtype=np.uint8),
+    )
+    assert processor.plot_rgb_histograms(bgr_red) is None
+    assert processor.plot_rgb_3d_cube(bgr_red) is None
+    assert len(show_calls) == 2
 
 
 @pytest.mark.parametrize(
