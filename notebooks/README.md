@@ -17,6 +17,7 @@ execução e executar novamente todas as células.
 | 04 | [`04_intensity_histograms_contrast.ipynb`](04_intensity_histograms_contrast.ipynb) | Transformações de intensidade, histogramas, CDF e equalização de contraste em imagens grayscale. | [![Abrir no Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/tfvieira/dip-2026-2/blob/main/notebooks/04_intensity_histograms_contrast.ipynb) |
 | 05 | [`05_spatial_filtering.ipynb`](05_spatial_filtering.ipynb) | Correlação 2D, suavização, realce e detecção de bordas no domínio espacial. | [![Abrir no Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/tfvieira/dip-2026-2/blob/main/notebooks/05_spatial_filtering.ipynb) |
 | 07 | [`07_color_images.ipynb`](07_color_images.ipynb) | Canais BGR/RGB, conversões de espaços de cor, histogramas e operações por canal. | [![Abrir no Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/tfvieira/dip-2026-2/blob/main/notebooks/07_color_images.ipynb) |
+| 08 | [`08_morphology.ipynb`](08_morphology.ipynb) | Elementos estruturantes e operações de morfologia em máscaras binárias. | [![Abrir no Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/tfvieira/dip-2026-2/blob/main/notebooks/08_morphology.ipynb) |
 
 ## Orientações de uso
 
