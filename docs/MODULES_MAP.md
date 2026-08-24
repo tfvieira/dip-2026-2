@@ -116,42 +116,32 @@ incompleto.
 
 ### `src/dip_toolkit/modules/fourier_transformer.py`
 
-- Responsabilidade aparente: aplicar transformada de Fourier, visualizar
-  espectros e construir filtros no domínio da frequência.
+- Responsabilidade aparente: apresentar o fluxo introdutório da transformada de
+  Fourier para imagens grayscale 2D e a aplicação de máscaras ideais no domínio
+  da frequência.
 - Classes públicas: `FourierTransformer`.
 - Funções e métodos públicos:
-  `compute_fourier_transform(image)`,
-  `compute_inverse_fourier_transform(dft_shift)`,
-  `visualize_fourier_transform(dft_shift)`,
-  `generate_filter(shape, filter_type, cutoff_low=None, cutoff_high=None, n=2, ripple=0.1)`,
-  `apply_filter(dft_shift, mask)` e
-  `create_notch_filter(shape, u, v, radius, filter_type="ideal")`.
-- Funcionalidades implementadas: DFT com `cv.dft`, deslocamento com
-  `np.fft.fftshift`, inversa com `cv.idft`, magnitude e fase em Matplotlib,
-  máscaras ideais, Butterworth e elípticas simplificadas, aplicação de máscara
-  por produto e filtro notch ideal/Butterworth.
-- Principais dependências: OpenCV, NumPy e Matplotlib.
-- Testes existentes: nenhum.
-- Notebooks existentes: nenhum.
-- Problemas técnicos observados: ausência de type hints; classe sem docstring;
-  não valida que a entrada seja imagem 2D; `generate_filter` usa divisões por
-  `distance` que pode ser zero; `butterworth_band_reject` retorna `1 - mask[u,v]`
-  sem calcular previamente a versão passa-faixa, resultando em comportamento
-  incoerente com a intenção; não valida `filter_type`, `cutoff_low`,
-  `cutoff_high`, ordem ou raio; método de visualização mistura cálculo e
-  exibição com `plt.show()`.
-- Limitações: não cobre filtros homomórficos, laplaciano no domínio da
-  frequência, padding, centralização, restauração, ruído periódico de forma
-  didática completa ou comparação entre filtros.
+  `dft(image)`, `idft(spectrum)`, `magnitude(spectrum)`, `phase(spectrum)`,
+  `ideal_low_pass_mask(shape, cutoff)`,
+  `ideal_high_pass_mask(shape, cutoff)` e `apply_mask(spectrum, mask)`.
+- Funcionalidades implementadas: DFT 2D centralizada e inversa com NumPy,
+  magnitude e fase numéricas, máscaras circulares ideais passa-baixa e
+  passa-alta e aplicação de máscara binária ao espectro complexo.
+- Principais dependências: NumPy.
+- Testes existentes: `tests/test_fourier_transformer.py`, cobrindo o contrato,
+  as validações e os fluxos de reconstrução e filtragem ideal.
+- Notebooks existentes: `notebooks/06_intro_fourier.ipynb`, com exemplos de DFT,
+  magnitude, fase, reconstrução e máscaras ideais.
+- Limitações: escopo deliberadamente introdutório; não cobre tópicos avançados
+  de filtragem no domínio da frequência, restauração ou reconstrução.
 - Conteúdos ausentes relacionados: convolução no domínio da frequência,
-  teorema da convolução, padding, filtros passa-baixa/alta com validações,
-  filtros notch robustos, restauração inversa e Wiener.
+  teorema da convolução, padding e filtros de restauração inversa e Wiener.
 - Área temática: transformadas e filtragem no domínio da frequência.
-- Maturidade: `Necessita revisão`.
+- Maturidade: `Funcional` para o escopo introdutório.
 - Evidências no código: `FourierTransformer` em
-  `src/dip_toolkit/modules/fourier_transformer.py:6`,
-  `generate_filter` em `src/dip_toolkit/modules/fourier_transformer.py:45` e
-  `create_notch_filter` em `src/dip_toolkit/modules/fourier_transformer.py:104`.
+  `src/dip_toolkit/modules/fourier_transformer.py`, testes em
+  `tests/test_fourier_transformer.py` e exemplos em
+  `notebooks/06_intro_fourier.ipynb`.
 
 ### `src/dip_toolkit/modules/generate_data.py`
 
