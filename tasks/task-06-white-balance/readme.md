@@ -13,11 +13,22 @@ balance compensates for that cast so neutral scene content is represented more
 consistently. The Gray World method assumes that, on average, a scene should
 have similar intensity in the R, G, and B channels.
 
-Calculate the mean of each RGB channel, use them to obtain one correction gain
-per channel, and apply each gain to its corresponding channel. Round the
-corrected values to the nearest integer, clip them to `[0, 255]`, and return a
-new `uint8` image. If a channel has mean zero, use a gain of `1.0` for that
-channel to avoid division by zero.
+Calculate the mean of each RGB channel and use them to compute the Gray World
+reference mean:
+
+`gray_mean = (mean_R + mean_G + mean_B) / 3`
+
+Then calculate one correction gain per channel:
+
+`gain_R = gray_mean / mean_R`  
+`gain_G = gray_mean / mean_G`  
+`gain_B = gray_mean / mean_B`
+
+Apply each gain to its corresponding channel. Round the corrected values to
+the nearest integer, clip them to `[0, 255]`, and return a new `uint8` image.
+
+If a channel has mean zero, use a gain of `1.0` for that channel to avoid
+division by zero.
 
 This task uses the explicit **RGB** channel order:
 

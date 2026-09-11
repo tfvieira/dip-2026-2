@@ -69,8 +69,17 @@ def main():
         ],
         dtype=np.uint8,
     )
+    expected_zero = np.array(
+        [
+            [[0, 53, 64], [0, 107, 96]],
+            [[0, 53, 64], [0, 107, 96]],
+        ],
+        dtype=np.uint8,
+    )
+
     balanced_zero = white_balance(zero_channel)
-    assert np.all(balanced_zero[:, :, 0] == 0)
+
+    assert np.array_equal(balanced_zero, expected_zero)
     assert balanced_zero.dtype == np.uint8
     assert balanced_zero.shape == zero_channel.shape
 
