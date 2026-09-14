@@ -20,6 +20,7 @@ execução e executar novamente todas as células.
 | 07 | [`07_color_images.ipynb`](07_color_images.ipynb) | Canais BGR/RGB, conversões de espaços de cor, histogramas e operações por canal. | [![Abrir no Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/tfvieira/dip-2026-2/blob/main/notebooks/07_color_images.ipynb) |
 | 08 | [`08_morphology.ipynb`](08_morphology.ipynb) | Elementos estruturantes e operações de morfologia em máscaras binárias. | [![Abrir no Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/tfvieira/dip-2026-2/blob/main/notebooks/08_morphology.ipynb) |
 | 09 | [`09_segmentation_regions.ipynb`](09_segmentation_regions.ipynb) | Segmentação grayscale por limiares e bordas, refinamento morfológico e regiões conectadas. | [![Abrir no Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/tfvieira/dip-2026-2/blob/main/notebooks/09_segmentation_regions.ipynb) |
+| 10 | [`10_representation_descriptors.ipynb`](10_representation_descriptors.ipynb) | Representação de regiões, contornos, descritores geométricos e momentos básicos. | [![Abrir no Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/tfvieira/dip-2026-2/blob/main/notebooks/10_representation_descriptors.ipynb) |
 
 ## Orientações de uso
 
