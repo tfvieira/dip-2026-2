@@ -15,6 +15,8 @@ def test_rectangle_has_expected_basic_descriptors_and_moments() -> None:
     assert descriptor.bounding_box == (2, 1, 4, 3)
     assert descriptor.aspect_ratio == pytest.approx(4 / 3)
     assert descriptor.perimeter == pytest.approx(10)
+    assert descriptor.circularity == pytest.approx(4 * np.pi * 6 / 100)
+    assert descriptor.circularity <= 1
     assert descriptor.moments == pytest.approx((12, 42, 24, 15, 8, 0))
 
 
@@ -22,7 +24,7 @@ def test_approximate_disk_has_high_circularity() -> None:
     rows, columns = np.ogrid[:15, :15]
     mask = (((rows - 7) ** 2 + (columns - 7) ** 2) <= 25).astype(np.uint8) * 255
     descriptor = RegionDescriptorExtractor().describe_region(mask)
-    assert descriptor.circularity > 0.8
+    assert descriptor.circularity > 0.7
     assert descriptor.centroid == (7.0, 7.0)
 
 
@@ -40,7 +42,7 @@ def test_shifted_object_updates_centroid_and_moments() -> None:
     assert shifted_descriptor.moments.m01 > first_descriptor.moments.m01
 
 
-def test_multiple_regions_follow_dip_10_ids_and_are_deterministic() -> None:
+def test_multiple_regions_follow_component_ids_and_are_deterministic() -> None:
     mask = np.zeros((6, 7), dtype=np.uint8)
     mask[1:3, 1:3] = 255
     mask[3:5, 4:6] = 255
@@ -73,6 +75,15 @@ def test_single_pixel_has_defined_degenerate_perimeter_and_circularity() -> None
     assert descriptor.perimeter == 0
     assert descriptor.circularity == 0
     assert descriptor.centroid == (1.0, 1.0)
+
+
+def test_describe_region_rejects_disconnected_components() -> None:
+    mask = np.zeros((5, 5), dtype=np.uint8)
+    mask[1, 1] = 255
+    mask[3, 3] = 255
+
+    with pytest.raises(ValueError, match="exatamente uma região conectada"):
+        RegionDescriptorExtractor().describe_region(mask)
 
 
 @pytest.mark.parametrize(

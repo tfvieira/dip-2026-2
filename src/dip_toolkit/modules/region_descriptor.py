@@ -28,8 +28,9 @@ class RegionDescriptor(NamedTuple):
 
     ``contour`` tem shape ``(n, 1, 2)`` e coordenadas ``(x, y)``. A caixa é
     ``(x, y, width, height)``. A área é a contagem de pixels; o perímetro vem
-    da fronteira extraída pelo OpenCV. Contornos degenerados têm perímetro e
-    circularidade iguais a 0.
+    da fronteira extraída pelo OpenCV. A circularidade usa a área geométrica
+    do contorno para manter a mesma convenção do perímetro. Contornos
+    degenerados têm perímetro e circularidade iguais a 0.
     """
 
     region_id: int
@@ -53,9 +54,9 @@ class RegionDescriptorExtractor:
     def describe_regions(
         self, regions: ConnectedComponents
     ) -> tuple[RegionDescriptor, ...]:
-        """Descreve diretamente a saída de componentes conectados da DIP-10."""
+        """Descreve diretamente a saída de componentes conectados."""
         if not isinstance(regions, ConnectedComponents):
-            raise TypeError("regions deve ser um ConnectedComponents da DIP-10.")
+            raise TypeError("regions deve ser um resultado de componentes conectados.")
         self._validate_mask(regions.mask)
         self._validate_labels(regions.labels)
         if regions.mask.shape != regions.labels.shape:
@@ -103,13 +104,21 @@ class RegionDescriptorExtractor:
         region_id = self._validate_region_id(region_id)
         if not np.any(mask):
             raise ValueError("mask deve conter ao menos um pixel de primeiro plano.")
+        total_components, _ = cv.connectedComponents(
+            mask, connectivity=8, ltype=cv.CV_32S
+        )
+        if total_components != 2:
+            raise ValueError("mask deve conter exatamente uma região conectada.")
         contour = self.extract_contour(mask)
         values = cv.moments(mask, binaryImage=True)
         area = float(values["m00"])
         centroid = (float(values["m10"] / area), float(values["m01"] / area))
         x, y, width, height = cv.boundingRect(contour)
         perimeter = 0.0 if len(contour) < 2 else float(cv.arcLength(contour, True))
-        circularity = 0.0 if perimeter == 0 else float(4 * np.pi * area / perimeter**2)
+        contour_area = float(cv.contourArea(contour))
+        circularity = (
+            0.0 if perimeter == 0 else float(4 * np.pi * contour_area / perimeter**2)
+        )
         return RegionDescriptor(
             region_id=region_id,
             contour=contour,
