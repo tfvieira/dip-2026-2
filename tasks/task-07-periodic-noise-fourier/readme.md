@@ -32,7 +32,8 @@ Complete the marked regions in the notebook:
 - restore the image using FFT, shift, filter multiplication, inverse shift,
   inverse FFT, and the real part;
 - calculate RMSE in `float64`;
-- create sliders and connect them to the interactive pipeline.
+- create sliders for horizontal frequency, vertical frequency, and notch radius,
+  using the provided amplitude slider as a reference.
 
 Use `np.fft.fft2`, `np.fft.fftshift`, `np.fft.ifftshift`, and `np.fft.ifft2`.
 Do not use OpenCV DFT/IDFT, SciPy signal functions, ready-made notch filters,
