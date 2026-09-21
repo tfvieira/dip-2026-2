@@ -72,7 +72,7 @@ def test_mse_has_known_value_and_accepts_filter_dtype() -> None:
     assert restorer.mse(reference, np.full((2, 2), 3.0)) == 9
 
 
-def test_dip06_filters_improve_controlled_noise() -> None:
+def test_spatial_filters_improve_controlled_noise() -> None:
     image = np.full((31, 31), 100, dtype=np.uint8)
     restorer = ImageRestorer()
     filters = ImagePreprocessor()

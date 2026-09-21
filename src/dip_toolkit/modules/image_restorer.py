@@ -25,7 +25,7 @@ class ImageRestorer:
 
     Métodos aleatórios aceitam ``seed`` ou ``rng``, mas nunca os dois. A mesma
     seed gera o mesmo resultado e o estado de um ``Generator`` é avançado.
-    Filtros básicos continuam sendo fornecidos pela DIP-06.
+    Filtros espaciais básicos continuam sendo fornecidos por ``ImagePreprocessor``.
     """
 
     def add_gaussian_noise(
@@ -104,7 +104,7 @@ class ImageRestorer:
         kernel_size: int = 3,
         direction: Direction = "horizontal",
     ) -> np.ndarray:
-        """Aplica motion blur com a correlação espacial da DIP-06."""
+        """Aplica motion blur com correlação espacial."""
         self._validate_image(image, "image")
         kernel = self.motion_blur_kernel(kernel_size, direction)
         preprocessor = ImagePreprocessor()
