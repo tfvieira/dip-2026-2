@@ -26,7 +26,7 @@ Complete every marked region in the notebook:
 - `add_salt_pepper_noise(image, density, seed=0)`;
 - `median_filter(image, kernel_size)`;
 - `rmse(reference, result)`;
-- the `kernel_size_slider` and its connection to `update_pipeline`.
+- the `kernel_size_slider`, using the provided density slider as a reference.
 
 ### Noise contract
 
@@ -55,6 +55,6 @@ the implementation cells, run the deterministic test until it prints
 `Test passed!`, then create the missing window-size slider and explore the
 pipeline.
 
-The notebook provides the density slider with `continuous_update=True`. Use a
-`widgets.SelectionSlider` with the odd options `3`, `5`, `7`, and `9` for the
-window size, also with dynamic updates.
+The notebook provides the density slider with `continuous_update=True`. Create
+a `widgets.SelectionSlider` for the window size with the odd options `3`, `5`,
+`7`, and `9`, also using `continuous_update=True`.
