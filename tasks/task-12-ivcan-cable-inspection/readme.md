@@ -37,19 +37,18 @@ must respect the same contracts and five-fold protocol for a fair comparison.
 
 ## Dataset Setup in Google Colab
 
-The repository contains no images, masks, or `dataset.csv`. Use the public
-[IVCAN dataset folder](https://drive.google.com/drive/folders/1cLiKSrod82RYVvowh26CZvaocbZISqvy?usp=drive_link).
+The repository contains no images, masks, or `dataset.csv`. The notebook
+downloads the public [IVCAN dataset folder](https://drive.google.com/drive/folders/1cLiKSrod82RYVvowh26CZvaocbZISqvy?usp=drive_link)
+directly with `gdown`; a Drive shortcut or Drive mount is not required.
 
-1. Open the link with the account that will be used in Colab.
-2. Select **Organize -> Add shortcut to Drive**, place it directly in **My
-   Drive**, and name it `IVCAN-Dataset`.
-3. Open the notebook in Colab and run the Drive configuration cell.
-4. Save generated results in your personal `IVCAN-Resultados` folder, never in
-   the shared dataset folder.
+Run the download-and-validation cell at the beginning of the notebook. It uses
+the public folder link, stores the data in the temporary Colab filesystem, and
+checks for `dataset.csv`, `Images`, and `Masks` before continuing. Results are
+written to a separate temporary `IVCAN-Resultados` directory.
 
-The setup validates `dataset.csv`, `Images`, and `Masks`. If the shortcut is not
-visible in Colab, set `DATASET_DIR` to the accessible Drive path and rerun the
-validation. It must point directly to the folder containing those three items.
+The Colab runtime is ephemeral. Downloaded data and generated results disappear
+when the session is reset. Copy any artifacts you want to keep to your own Drive
+after the evaluation; never modify the public dataset folder.
 
 ## Five-Fold Evaluation Protocol
 
@@ -74,8 +73,8 @@ evaluation as if all 320 theoretical images had been processed.
 
 ## How to Run
 
-Open `task-12-ivcan-cable-inspection.ipynb` in Google Colab. Mount and validate
-your Drive dataset, inspect an example, implement only the two marked regions,
-choose and freeze parameters per fold, run the contract test, and then execute
-the five-fold evaluation. Report the cable and stripe tables, fold parameters,
-data exclusions, and an analysis of errors and limitations.
+Open `task-12-ivcan-cable-inspection.ipynb` in Google Colab. Download and
+validate the public dataset, inspect an example, implement only the two marked
+regions, choose and freeze parameters per fold, run the contract test, and then
+execute the five-fold evaluation. Report the cable and stripe tables, fold
+parameters, data exclusions, and an analysis of errors and limitations.
