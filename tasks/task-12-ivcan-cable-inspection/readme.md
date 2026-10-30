@@ -35,20 +35,33 @@ must respect the same contracts and five-fold protocol for a fair comparison.
   inside the segmentation functions.
 - Do not modify the provided folds, metrics, evaluator, or function signatures.
 
+
 ## Dataset Setup in Google Colab
 
-The repository contains no images, masks, or `dataset.csv`. The notebook
-downloads the public [IVCAN dataset folder](https://drive.google.com/drive/folders/1cLiKSrod82RYVvowh26CZvaocbZISqvy?usp=drive_link)
-directly with `gdown`; a Drive shortcut or Drive mount is not required.
+The dataset is provided as a public ZIP file:
 
-Run the download-and-validation cell at the beginning of the notebook. It uses
-the public folder link, stores the data in the temporary Colab filesystem, and
-checks for `dataset.csv`, `Images`, and `Masks` before continuing. Results are
-written to a separate temporary `IVCAN-Resultados` directory.
+[Download IVCAN-Dataset.zip](https://drive.google.com/file/d/1q0OG-pHmEKcgAML49jlaZTmn0suO1p2j/view)
 
-The Colab runtime is ephemeral. Downloaded data and generated results disappear
-when the session is reset. Copy any artifacts you want to keep to your own Drive
-after the evaluation; never modify the public dataset folder.
+The notebook automatically downloads and extracts the ZIP using
+`gdown`. No Google Drive mount, shortcut, or manual dataset
+configuration is required.
+
+The extracted dataset contains:
+
+- `dataset.csv`: sample metadata;
+- `Images/`: 80 folders containing 320 images;
+- `Masks/`: 80 folders containing 552 mask files.
+
+The setup cell validates the required files and directories before
+continuing.
+
+Downloaded files are stored temporarily in the Colab environment.
+Evaluation results are saved separately in `/content/ivcan_results`.
+
+**Note:** The Colab filesystem is temporary. Downloaded data and
+results will be deleted when the runtime is reset. Save any results
+you want to keep before closing the session.
+
 
 ## Five-Fold Evaluation Protocol
 
